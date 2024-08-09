@@ -1,0 +1,116 @@
+/*CUSTOMER SEGMENTATION AND ANALYSIS*/
+/*Using KMeans*/
+
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load dataset
+df = pd.read_csv('online_retail_sales_dataset.csv')
+
+# Display the first few rows
+df.head()
+
+#Find no.of.rows & columns
+df.shape
+
+df.info()
+
+# Get basic statistics
+df.describe()
+
+# Check for missing values
+df.isnull().sum()
+
+# Data Cleaning
+df.dropna(inplace=True)
+
+# Create New Variables
+df['Total_Spend'] = df['quantity'] * df['price'] - df['discount']
+df['Transaction_Date'] = pd.to_datetime(df['timestamp'])
+df['Recency'] = (df['Transaction_Date'].max() - df['Transaction_Date']).dt.days
+df['Purchase_Frequency'] = df.groupby('customer_id')['transaction_id'].transform('count')
+
+# Aggregate data at customer level
+customer_data = df.groupby('customer_id').agg({
+    'Total_Spend': 'sum',
+    'Purchase_Frequency': 'mean',
+    'Recency': 'min'
+}).reset_index()
+
+# Standardize the Data
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(customer_data[['Total_Spend', 'Purchase_Frequency', 'Recency']])
+
+# Assuming 'scaled_data' is your standardized data used for clustering
+
+# Range of clusters to try
+range_n_clusters = list(range(2, 11))
+
+# Initialize a list to store silhouette scores
+silhouette_scores = []
+
+for n_clusters in range_n_clusters:
+    # Initialize KMeans with n_clusters
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    
+    # Fit the data
+    cluster_labels = kmeans.fit_predict(scaled_data)
+    
+    # Calculate the silhouette score
+    silhouette_avg = silhouette_score(scaled_data, cluster_labels)
+    
+    # Append the score to the list
+    silhouette_scores.append(silhouette_avg)
+
+# Plotting the silhouette scores against number of clusters
+plt.figure(figsize=(10, 6))
+plt.plot(range_n_clusters, silhouette_scores, marker='o')
+plt.title('Silhouette Scores for Various Numbers of Clusters')
+plt.xlabel('Number of Clusters (K)')
+plt.ylabel('Average Silhouette Score')
+plt.show()
+
+# Find the optimal number of clusters
+optimal_clusters = range_n_clusters[silhouette_scores.index(max(silhouette_scores))]
+print(f'Optimal number of clusters: {optimal_clusters}')
+
+# K-Means Clustering
+kmeans = KMeans(n_clusters=3, random_state=42)
+kmeans.fit(scaled_data)
+customer_data['Cluster'] = kmeans.labels_
+
+# Evaluate clustering performance
+silhouette_avg = silhouette_score(scaled_data, kmeans.labels_)
+print(f'Silhouette Score: {silhouette_avg}')
+
+# Analyze and Visualize Clusters
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='Total_Spend', y='Purchase_Frequency', hue='Cluster', data=customer_data, palette='viridis')
+plt.title('Customer Segmentation Based on Purchasing Behavior')
+plt.show()
+
+# Cluster Analysis
+cluster_summary = customer_data.groupby('Cluster').agg({
+    'Total_Spend': ['mean', 'sum'],
+    'Purchase_Frequency': 'mean',
+    'Recency': 'mean',
+    'customer_id': 'count'
+}).reset_index()
+
+cluster_summary.columns = ['Cluster', 'Avg_Total_Spend', 'Total_Spend_Sum', 'Avg_Purchase_Frequency', 'Avg_Recency', 'Customer_Count']
+cluster_summary['Customer_Percentage'] = (cluster_summary['Customer_Count'] / customer_data['customer_id'].nunique()) * 100
+
+print(cluster_summary)
+
+# Cluster Interpretation
+for cluster in range(cluster_summary.shape[0]):
+    print(f"Cluster {cluster+1}:")
+    print(f"  - Average Total Spend: {cluster_summary.iloc[cluster]['Avg_Total_Spend']}")
+    print(f"  - Average Purchase Frequency: {cluster_summary.iloc[cluster]['Avg_Purchase_Frequency']}")
+    print(f"  - Average Recency: {cluster_summary.iloc[cluster]['Avg_Recency']}")
+    print(f"  - Percentage of Customer Base: {cluster_summary.iloc[cluster]['Customer_Percentage']:.2f}%\n")
