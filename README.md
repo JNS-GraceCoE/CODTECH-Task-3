@@ -47,5 +47,7 @@ MENTOR: MUZAMMIL AHMED
 ![Screenshot (238)](https://github.com/user-attachments/assets/4cd8f69c-dd90-4f8c-8845-462c4ffddb33)
 ![Screenshot (239)](https://github.com/user-attachments/assets/8736b61f-bbed-4036-b908-666703cf81b7)
 ## Power BI dashboard
+![Screenshot (240)](https://github.com/user-attachments/assets/bfeeb7b4-30c1-418e-8883-e031cbc0a76f)
+![Screenshot (241)](https://github.com/user-attachments/assets/f197611b-217c-47b7-ae59-f1eba8079c36)
 ## Conclusion
 Provides a detailed interpretation of each cluster, describing their behavior, potential value to the business, and any insights for targeted marketing or customer relationship management.
